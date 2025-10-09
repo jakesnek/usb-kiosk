@@ -1,0 +1,26 @@
+{
+  "name": "usb-kiosk",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^26.6.10",
+    "electron-builder": "^24.0.0"
+  },
+  "build": {
+    "appId": "com.4jd.usbkiosk",
+    "productName": "USB Kiosk",
+    "win": {
+      "target": "nsis",
+      "requestedExecutionLevel": "requireAdministrator"
+    }
+  },
+  "dependencies": {
+    "@panzoom/panzoom": "^4.6.0",
+    "bootstrap-icons": "^1.13.1",
+    "mammoth": "^1.11.0"
+  }
+}

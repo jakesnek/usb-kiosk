@@ -1,0 +1,40 @@
+# Node modules
+node_modules/
+
+# Built app
+dist/
+build/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Editor directories and files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Temporary
+*.tmp
+*.temp
+
+# npm local
+package-lock.json
+
+# Ignore local environment files
+.env
+
+# Electron builder output
+*.exe
+*.AppImage
+*.dmg
+
+# keep package.json and other sources tracked

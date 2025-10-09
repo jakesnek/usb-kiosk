@@ -1,0 +1,164 @@
+.card {
+  cursor: pointer;
+}
+
+html,
+body {
+  margin-left: auto;
+  margin-right: auto;
+  height: 100%;
+  width: 100%;
+  font-family: Arial, sans-serif;
+  background-color: #1e1e1e;
+  scrollbar-gutter: auto;
+}
+
+/* File browser (smaller) */
+#driveContainer {
+  width: 100%;
+  float: left;
+  padding: 10px;
+  height: 100%;
+  overflow-y: auto;
+  background-color: #ffffff;
+  box-shadow: 2px 0 5px rgba(255, 255, 255, 0.9);
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  scrollbar-gutter: stable overlay;
+}
+
+
+#main {
+  background-color: #1e1e1e;
+  display: flex;
+  height: 100vh;
+  width: 100%;
+
+}
+
+#viewer {
+  display: flex;
+  flex-grow: 1;
+  margin: 20px;
+  border-radius: 20px;
+  background-color: #ffffff;
+  text-align: center;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
+}
+
+
+/* media-mode (center images/videos) */
+
+#viewer.pdf-mode {
+  transform-origin: center center;
+  transition: transform 0.1s ease-out;
+  overflow: auto;
+  flex-grow: 1;
+}
+
+#viewer.media-mode {
+  transform-origin: center center;
+}
+
+/* text-mode (left/top align, scrollable) */
+#viewer.text-mode {
+  display: block !important;
+  padding: 20px;
+  overflow-y: auto;
+  text-align: left;
+}
+
+#fileList button {
+  display: block;
+  width: 100%;
+  margin: 5px 0;
+  text-align: left;
+}
+
+.nav-tabs {
+  margin-bottom: 10px;
+}
+
+video,
+img,
+iframe {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+/* Scrollbar styling (overlay) */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(100, 100, 100, 0.6);
+  border-radius: 4px;
+  transition: background 0.2s ease, width 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(80, 80, 80, 0.9);
+  width: 10px;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 100, 100, 0.6) transparent;
+}
+
+/* DOCX/TXT container */
+.docx-viewer,
+.txt-viewer {
+  color: #1e1e1e;
+  padding: 8px 0;
+  max-width: 100%;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  box-sizing: border-box;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  line-height: 1.6;
+  font-size: 16px;
+}
+
+/* make docx images responsive inside the converted html */
+.docx-viewer img,
+.txt-viewer img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* monospace for TXT files */
+.txt-viewer {
+  font-family: Consolas, "Courier New", monospace;
+  background: transparent;
+  color: #1e1e1e;
+  padding: 8px 0;
+}
+
+
+
+#selectDriveBtn {
+  display: block;
+  margin: 10px auto;
+}
+
+#viewer img,
+#viewer video {
+  touch-action: none;
+  /* Required for smooth touch gestures */
+  cursor: grab;
+}
+
+#viewer img:active,
+#viewer video:active {
+  cursor: grabbing;
+}
