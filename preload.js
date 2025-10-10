@@ -4,5 +4,6 @@ contextBridge.exposeInMainWorld("api", {
   listUsbDrives: () => ipcRenderer.invoke("list-usb-drives"),
   readDirectory: (folderPath) => ipcRenderer.invoke("read-directory", folderPath),
   convertDocx: (filePath) => ipcRenderer.invoke("convert-docx", filePath),
-  readText: (filePath) => ipcRenderer.invoke("read-text", filePath)
+  readText: (filePath) => ipcRenderer.invoke("read-text", filePath),
+  onUsbUpdate: (callback) => ipcRenderer.on("usb-update", (_, data) => callback(data))
 });

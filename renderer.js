@@ -1,27 +1,79 @@
 let currentDrive = null;
+const driveContainer = document.getElementById('driveContainer');
+const viewer = document.getElementById('viewer');
 
-document.getElementById('selectDriveBtn').addEventListener('click', async () => {
-  const drives = await window.api.listUsbDrives();
-  if (!drives.length) {
-    alert('No USB drives detected.');
-    return;
-  } else {
-  // Pick first USB drive
-  const path = drives[0];
-  const files = await window.api.readDirectory(path);
-  currentDrive = { path, files };
-  populateTabs(currentDrive);
+// --------------------
+// Toast notifications
+// --------------------
+function showToast(message, type = "info") {
+  const existing = document.getElementById("toastContainer");
+  const container = existing || document.createElement("div");
+  if (!existing) {
+    container.id = "toastContainer";
+    container.className = "toast-container position-fixed bottom-0 end-0 p-3";
+    document.body.appendChild(container);
   }
+
+  const toast = document.createElement("div");
+  toast.className = `toast align-items-center text-bg-${type} border-0 show mb-2`;
+  toast.role = "alert";
+  toast.innerHTML = `
+    <div class="d-flex">
+      <div class="toast-body">${message}</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>`;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 4000);
+}
+
+// --------------------
+// Drive list handling
+// --------------------
+async function refreshDriveList() {
+  const drives = await window.api.listUsbDrives();
+  renderDriveButtons(drives);
+}
+
+function renderDriveButtons(drives) {
+  driveContainer.innerHTML = "";
+
+  if (!drives.length) {
+    driveContainer.innerHTML = "<p>No USB drives detected.</p>";
+    return;
+  }
+
+  drives.forEach((drivePath) => {
+    const btn = document.createElement("button");
+    btn.className = "btn btn-dark m-1 w-100";
+    btn.textContent = drivePath;
+    btn.addEventListener("click", async () => {
+      const files = await window.api.readDirectory(drivePath);
+      currentDrive = { path: drivePath, files };
+      populateTabs(currentDrive);
+    });
+    driveContainer.appendChild(btn);
+  });
+}
+
+// --------------------
+// Handle insert/remove
+// --------------------
+window.api.onUsbUpdate(async ({ drives, added, removed }) => {
+  if (added.length) showToast(`USB inserted: ${added.join(', ')}`, "success");
+  if (removed.length) showToast(`USB removed: ${removed.join(', ')}`, "danger");
+  renderDriveButtons(drives);
 });
 
-// Build tabs
+// --------------------
+// File tabs and display
+// --------------------
 function populateTabs(drive) {
-  const container = document.getElementById('driveContainer');
-  container.innerHTML = '';
+  driveContainer.innerHTML = '';
 
   const tabs = document.createElement('ul');
   tabs.className = 'nav nav-tabs';
   const tabNames = ['Videos', 'Images', 'Documents'];
+
   tabNames.forEach((type, i) => {
     const li = document.createElement('li');
     li.className = 'nav-item';
@@ -30,27 +82,28 @@ function populateTabs(drive) {
     if (i === 0) a.classList.add('active');
     a.href = '#';
     a.textContent = type;
+
     a.addEventListener('click', (e) => {
       e.preventDefault();
       Array.from(li.parentElement.children).forEach(c => c.firstChild.classList.remove('active'));
       a.classList.add('active');
       showFiles(drive.files, type, drive.path);
     });
+
     li.appendChild(a);
     tabs.appendChild(li);
   });
 
-  container.appendChild(tabs);
+  driveContainer.appendChild(tabs);
 
   const fileListDiv = document.createElement('div');
   fileListDiv.id = 'fileList';
-  container.appendChild(fileListDiv);
+  driveContainer.appendChild(fileListDiv);
 
   showFiles(drive.files, 'Videos', drive.path);
 }
 
-// Show files by tab
-function showFiles(files, type, path) {
+function showFiles(files, type, dirPath) {
   const container = document.getElementById('fileList');
   container.innerHTML = '';
 
@@ -69,7 +122,7 @@ function showFiles(files, type, path) {
       btn.textContent = f;
       btn.className = 'btn btn-dark m-1';
       btn.addEventListener('click', async () => {
-        await openFile(`${path}\\${f}`, ext);
+        await openFile(`${dirPath}/${f}`, ext);
       });
       container.appendChild(btn);
     }
@@ -80,18 +133,21 @@ function showFiles(files, type, path) {
   }
 }
 
-// File opener
+// --------------------
+// File viewer logic
+// --------------------
 async function openFile(filePath, ext) {
-  const viewer = document.getElementById('viewer');
+  viewer.innerHTML = '';
+  viewer.className = '';
+  viewer.classList.add('media-mode');
 
   // Videos
-  if (['mp4','webm','ogg','mkv','avi'].includes(ext)) {
-    viewer.classList.add('media-mode');
+  if (['mp4', 'webm', 'ogg', 'mkv', 'avi'].includes(ext)) {
     viewer.innerHTML = `<video controls style="max-width:90%;max-height:90%;"><source src="file://${filePath}" type="video/${ext}"></video>`;
     return;
   }
 
-  // Images
+// Images
   if (['png','jpg','jpeg','gif','bmp','webp'].includes(ext)) {
     viewer.classList.add('media-mode');
     viewer.innerHTML = `
@@ -208,7 +264,7 @@ function initializePanzoom(element) {
   // PDFs
   if (ext === 'pdf') {
     viewer.classList.add('pdf-mode');
-    viewer.innerHTML = `<iframe src="file://${filePath}#toolbar=0" style="width:100%;height:100%;object-fit:contain;"></iframe>`;
+    viewer.innerHTML = `<iframe src="file://${filePath}#toolbar=0" style="width:100%;height:100%;"></iframe>`;
     return;
   }
 
@@ -216,36 +272,26 @@ function initializePanzoom(element) {
   if (ext === 'docx') {
     viewer.classList.add('text-mode');
     viewer.innerHTML = `<p style="color:white;">Loading document...</p>`;
-    try {
-      const result = await window.api.convertDocx(filePath);
-      if (result && result.success) {
-        viewer.innerHTML = `<div class="docx-viewer">${result.html}</div>`;
-      } else {
-        viewer.innerHTML = `<p style="color:white;">Failed: ${result.error || 'Unknown'}</p>`;
-      }
-    } catch (err) {
-      viewer.innerHTML = `<p style="color:white;">Error: ${err.message}</p>`;
-    }
+    const result = await window.api.convertDocx(filePath);
+    viewer.innerHTML = result.success ? `<div class="docx-viewer">${result.html}</div>` : `<p style="color:white;">Failed: ${result.error}</p>`;
     return;
   }
 
   // TXT
   if (ext === 'txt') {
     viewer.classList.add('text-mode');
-    viewer.innerHTML = `<p style="color:white;">Loading text file...</p>`;
-    try {
-      const result = await window.api.readText(filePath);
-      if (result && result.success) {
-        viewer.innerHTML = `<div class="txt-viewer">${result.text}</div>`;
-      } else {
-        viewer.innerHTML = `<p style="color:white;">Failed: ${result.error || 'Unknown'}</p>`;
-      }
-    } catch (err) {
-      viewer.innerHTML = `<p style="color:white;">Error: ${err.message}</p>`;
-    }
+    const result = await window.api.readText(filePath);
+    viewer.innerHTML = result.success ? `<div class="txt-viewer">${result.text}</div>` : `<p style="color:white;">Failed: ${result.error}</p>`;
     return;
   }
 
-  // Fallback
-  viewer.innerHTML = `<p style="color:white;">Unsupported file. <br><a href="file://${filePath}" target="_blank" style="color:#9ecbff">${filePath}</a></p>`;
+  // Unsupported
+  viewer.innerHTML = `<p style="color:white;">Unsupported file type.</p>`;
 }
+
+// --------------------
+// Auto-load on startup
+// --------------------
+window.addEventListener('DOMContentLoaded', async () => {
+  await refreshDriveList();
+});

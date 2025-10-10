@@ -1,16 +1,62 @@
-.card {
-  cursor: pointer;
-}
-
+/* ---------- Layout Fix ---------- */
 html,
 body {
-  margin-left: auto;
-  margin-right: auto;
+  margin: 0;
+  padding: 0;
   height: 100%;
   width: 100%;
   font-family: Arial, sans-serif;
   background-color: #1e1e1e;
-  scrollbar-gutter: auto;
+
+}
+.btn-outline-custom {
+  border-color: #000000 !important;
+  border-radius: 50% !important;
+  width: 50px !important;
+  height: 50px !important;
+}
+
+.btn-outline-custom:hover {
+  background-color: #D2BB8A !important;
+}
+
+.navbar {
+  width: calc(100vw - 20px);
+  
+
+}
+
+.custom-navbar{
+  margin-top: 20px;
+  background-color: rgb(60, 146, 190); 
+  border-radius: 60px;
+  box-shadow: 0 0 10px rgba(60, 146, 190, 0.5);
+}
+
+#main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 100vh;
+  width: 100%;
+  background-color: #3C3B47;
+  
+}
+
+#viewer {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  margin: 20px;
+  border-radius: 20px;
+  background-color: #000000;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+  overflow: auto;
+}
+
+.card {
+  cursor: pointer;
 }
 
 /* File browser (smaller) */
@@ -27,30 +73,7 @@ body {
   scrollbar-gutter: stable overlay;
 }
 
-
-#main {
-  background-color: #1e1e1e;
-  display: flex;
-  height: 100vh;
-  width: 100%;
-
-}
-
-#viewer {
-  display: flex;
-  flex-grow: 1;
-  margin: 20px;
-  border-radius: 20px;
-  background-color: #ffffff;
-  text-align: center;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
-}
-
-
 /* media-mode (center images/videos) */
-
 #viewer.pdf-mode {
   transform-origin: center center;
   transition: transform 0.1s ease-out;
@@ -91,6 +114,8 @@ iframe {
 /* Scrollbar styling (overlay) */
 ::-webkit-scrollbar {
   width: 8px;
+  height: 8px;
+  margin-right: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -98,20 +123,21 @@ iframe {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(100, 100, 100, 0.6);
+  background: rgba(0, 13, 255, 0.6);
   border-radius: 4px;
   transition: background 0.2s ease, width 0.2s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(80, 80, 80, 0.9);
+  background: rgba(255, 0, 0, 0.9);
   width: 10px;
 }
 
-* {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(100, 100, 100, 0.6) transparent;
+.toast-container {
+  z-index: 9999;
 }
+
+
 
 /* DOCX/TXT container */
 .docx-viewer,
@@ -143,8 +169,6 @@ iframe {
   color: #1e1e1e;
   padding: 8px 0;
 }
-
-
 
 #selectDriveBtn {
   display: block;

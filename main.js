@@ -1,32 +1,30 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const mammoth = require('mammoth');
-  const { exec } = require('child_process');
+const drivelist = require('drivelist');
 
-  function listUsbDrivesWindows() {
-    return new Promise((resolve) => {
-      const cmd = `powershell -Command "Get-Volume | Where-Object {$_.DriveType -eq 'Removable'} | Select-Object -ExpandProperty DriveLetter"`;
+let mainWindow = null;
+let previousDrives = [];
 
-      exec(cmd, (err, stdout, stderr) => {
-        if (err) return resolve([]); // fallback to empty
-        const letters = stdout
-          .split(/\r?\n/)
-          .map(l => l.trim())
-          .filter(l => l);
-        const drives = letters.map(l => `${l}:\\`);
-        resolve(drives);
-      });
-    });
+async function listUsbDrives() {
+  try {
+    const drives = await drivelist.list();
+    const removable = drives.filter(d => d.isRemovable && d.mountpoints.length > 0);
+    return removable.map(d => d.mountpoints[0].path);
+  } catch (err) {
+    console.error('Error listing USB drives:', err);
+    return [];
   }
+}
 
 function createWindow() {
-  const win = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
-    fullscreen: true,          // start in fullscreen
-    autoHideMenuBar: true,     // hide menu bar
-    frame: false,              // removes OS title bar completely
+    fullscreen: true,
+    autoHideMenuBar: true,
+    frame: false,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -34,44 +32,53 @@ function createWindow() {
     }
   });
 
-  win.webContents.setWindowOpenHandler(({ url }) => {
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     console.log("Blocked attempt to open:", url);
     return { action: 'deny' };
   });
 
-  win.webContents.on('will-navigate', (event, url) => {
-    // Only allow local files
-    if (!url.startsWith('file://')) {
-      event.preventDefault();
-    }
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (!url.startsWith('file://')) event.preventDefault();
   });
 
+  mainWindow.loadFile('index.html');
+}
 
-  win.loadFile('index.html');
+async function startUsbWatcher() {
+  previousDrives = await listUsbDrives();
+
+  setInterval(async () => {
+    const current = await listUsbDrives();
+    const added = current.filter(d => !previousDrives.includes(d));
+    const removed = previousDrives.filter(d => !current.includes(d));
+
+    if (added.length || removed.length) {
+      mainWindow?.webContents.send('usb-update', {
+        drives: current,
+        added,
+        removed
+      });
+      previousDrives = current;
+    }
+  }, 3000);
 }
 
 app.whenReady().then(() => {
   createWindow();
-  listUsbDrivesWindows();
+  startUsbWatcher();
 });
 
+ipcMain.handle('list-usb-drives', listUsbDrives);
 
-ipcMain.handle('list-usb-drives', async () => {
-  const drives = await listUsbDrivesWindows();
-  return drives;
-});
-
-ipcMain.handle('read-directory', async (event, folderPath) => {
+ipcMain.handle('read-directory', async (_, folderPath) => {
   try {
     return fs.readdirSync(folderPath);
-  } catch (err) {
+  } catch {
     return [];
   }
 });
 
-
-// DOCX conversion
-ipcMain.handle('convert-docx', async (event, filePath) => {
+ipcMain.handle('convert-docx', async (_, filePath) => {
   try {
     const buffer = fs.readFileSync(filePath);
     const result = await mammoth.convertToHtml({ buffer });
@@ -81,8 +88,7 @@ ipcMain.handle('convert-docx', async (event, filePath) => {
   }
 });
 
-// TXT reading
-ipcMain.handle("read-text", async (event, filePath) => {
+ipcMain.handle('read-text', async (_, filePath) => {
   try {
     const content = fs.readFileSync(filePath, "utf8");
     return { success: true, text: content };
