@@ -28,6 +28,7 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
+      webviewTag: true,
       preload: path.join(__dirname, 'preload.js')
     }
   });
@@ -71,8 +72,41 @@ app.whenReady().then(() => {
 ipcMain.handle('list-usb-drives', listUsbDrives);
 
 ipcMain.handle('read-directory', async (_, folderPath) => {
+  const allowedExtensions = [
+    '.mp4', '.webm', '.ogg', '.mkv', '.avi', // videos
+    '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', // images
+    '.pdf', '.docx', '.txt' // documents
+  ];
+
+  function getAllFiles(dirPath, arrayOfFiles = []) {
+    let entries;
+    try {
+      entries = fs.readdirSync(dirPath, { withFileTypes: true });
+    } catch {
+      return arrayOfFiles;
+    }
+
+    for (const entry of entries) {
+      const fullPath = path.join(dirPath, entry.name);
+
+      // Skip system or hidden folders
+      if (entry.isDirectory()) {
+        if (!entry.name.startsWith('.') && !entry.name.startsWith('System')) {
+          getAllFiles(fullPath, arrayOfFiles);
+        }
+      } else {
+        const ext = path.extname(entry.name).toLowerCase();
+        if (allowedExtensions.includes(ext)) {
+          arrayOfFiles.push(fullPath);
+        }
+      }
+    }
+
+    return arrayOfFiles;
+  }
+
   try {
-    return fs.readdirSync(folderPath);
+    return getAllFiles(folderPath);
   } catch {
     return [];
   }

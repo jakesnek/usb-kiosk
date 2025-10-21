@@ -52,7 +52,7 @@ body {
   border-radius: 20px;
   background-color: #000000;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
-  overflow: auto;
+  overflow: hidden;
 }
 
 .card {
@@ -75,9 +75,10 @@ body {
 
 /* media-mode (center images/videos) */
 #viewer.pdf-mode {
+  padding: 10px;
+  background-color: #282828;
   transform-origin: center center;
   transition: transform 0.1s ease-out;
-  overflow: auto;
   flex-grow: 1;
 }
 
@@ -116,6 +117,7 @@ iframe {
   width: 8px;
   height: 8px;
   margin-right: 5px;
+  display: none !important;
 }
 
 ::-webkit-scrollbar-track {
@@ -131,6 +133,11 @@ iframe {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 0, 0, 0.9);
   width: 10px;
+}
+
+iframe {
+  border: none;
+  overflow: hidden;
 }
 
 .toast-container {
@@ -166,7 +173,7 @@ iframe {
 .txt-viewer {
   font-family: Consolas, "Courier New", monospace;
   background: transparent;
-  color: #1e1e1e;
+  color: #f4f4f4;
   padding: 8px 0;
 }
 
@@ -186,3 +193,4 @@ iframe {
 #viewer video:active {
   cursor: grabbing;
 }
+

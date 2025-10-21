@@ -119,10 +119,12 @@ function showFiles(files, type, dirPath) {
     const ext = (f.split('.').pop() || '').toLowerCase();
     if (exts.includes(ext)) {
       const btn = document.createElement('button');
-      btn.textContent = f;
+      const cleanName = f.replace(/^([A-Za-z]:[\\/])/, '');
+      btn.textContent = cleanName;
       btn.className = 'btn btn-dark m-1';
       btn.addEventListener('click', async () => {
-        await openFile(`${dirPath}/${f}`, ext);
+        await openFile(f, ext);
+
       });
       container.appendChild(btn);
     }
@@ -147,119 +149,30 @@ async function openFile(filePath, ext) {
     return;
   }
 
-// Images
-  if (['png','jpg','jpeg','gif','bmp','webp'].includes(ext)) {
+  // Images
+  if (['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'].includes(ext)) {
     viewer.classList.add('media-mode');
     viewer.innerHTML = `
       <div style="width:90%;height:90%;position:relative;">
         <img id="zoomableImg" src="file://${filePath}" style="width:100%;height:100%;object-fit:contain;transform-origin:center;">
       </div>`;
-    
+
     const zoomableImage = document.getElementById('zoomableImg');
     if (zoomableImage) {
-      zoomableImage.style.transition = 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)';
-      
       zoomableImage.addEventListener('load', () => {
-        const panzoom = Panzoom(zoomableImage, {
-          maxScale: 5,
+        const zoomed = Panzoom(zoomableImage, {
+          maxScale: 10,
           minScale: 1,
-          contain: true,
-          panOnlyWhenZoomed: true,
-          animate: true,
-          duration: 200,
-          easing: 'cubic-bezier(0.4, 0, 0.2, 1)'
+          contain: 'outside',
         });
-
-        let wasZoomed = false;
-        let isResetting = false;
 
         // Enable mouse wheel zoom
-        zoomableImage.parentElement.addEventListener('wheel', panzoom.zoomWithWheel);
+        zoomableImage.parentElement.addEventListener('wheel', zoomed.zoomWithWheel);
 
-        // Change cursor when zoomed and handle smooth reset
-        zoomableImage.addEventListener('panzoomchange', (event) => {
-          const { scale } = event.detail;
-          zoomableImage.style.cursor = scale > 1 ? 'move' : 'default';
-          
-          if (scale > 1) {
-            wasZoomed = true;
-            isResetting = false;
-          }
-          
-          if (wasZoomed && Math.abs(scale - 1) < 0.01 && !isResetting) {
-            wasZoomed = false;
-            isResetting = true;
-            
-            // Smoothly animate to center
-            requestAnimationFrame(() => {
-              panzoom.pan(0, 0, { 
-                animate: true,
-                duration: 200,
-                easing: 'cubic-bezier(0.4, 0, 0.2, 1)'
-              });
-            });
-            
-            // Reset the flag after animation
-            setTimeout(() => {
-              isResetting = false;
-            }, 250);
-          }
-        });
       });
     }
-    
-    const img = document.getElementById('zoomableImg');
-    
     return;
   }
-
-// Add this helper function at the end of the file
-function initializePanzoom(element) {
-  // Add transition for smooth reset
-  element.style.transition = 'transform 0.3s ease-out';
-  
-  const panzoom = window.Panzoom(element, {
-    maxScale: 5,
-    minScale: 1,
-    contain: true,
-    cursor: 'default',
-    panOnlyWhenZoomed: true,
-    startScale: 1,
-    startX: 0,
-    startY: 0
-  });
-
-  let wasZoomed = false;
-
-  // Enable mouse wheel zoom
-  element.parentElement.addEventListener('wheel', (e) => {
-    e.preventDefault();
-    const delta = e.deltaY;
-    
-    if (delta > 0) {
-      panzoom.zoomOut();
-    } else {
-      panzoom.zoomIn();
-    }
-  });
-
-  // Change cursor when zoomed and reset position at scale 1
-  element.addEventListener('panzoomchange', (event) => {
-    const { scale } = event.detail;
-    element.style.cursor = scale > 1 ? 'move' : 'default';
-    
-    // Track if we were zoomed
-    if (scale > 1) {
-      wasZoomed = true;
-    }
-    
-    // Only reset if we were previously zoomed and now we're back to scale 1
-    if (wasZoomed && Math.abs(scale - 1) < 0.01) {
-      wasZoomed = false;
-      panzoom.reset({ animate: true });
-    }
-  });
-}
 
   // PDFs
   if (ext === 'pdf') {
