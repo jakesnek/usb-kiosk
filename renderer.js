@@ -2,9 +2,9 @@ let currentDrive = null;
 const driveContainer = document.getElementById('driveContainer');
 const viewer = document.getElementById('viewer');
 
-// --------------------
-// Toast notifications
-// --------------------
+
+
+
 function showToast(message, type = "info") {
   const existing = document.getElementById("toastContainer");
   const container = existing || document.createElement("div");
@@ -26,9 +26,9 @@ function showToast(message, type = "info") {
   setTimeout(() => toast.remove(), 4000);
 }
 
-// --------------------
-// Drive list handling
-// --------------------
+
+
+
 async function refreshDriveList() {
   const drives = await window.api.listUsbDrives();
   renderDriveButtons(drives);
@@ -55,18 +55,18 @@ function renderDriveButtons(drives) {
   });
 }
 
-// --------------------
-// Handle insert/remove
-// --------------------
+
+
+
 window.api.onUsbUpdate(async ({ drives, added, removed }) => {
   if (added.length) showToast(`USB inserted: ${added.join(', ')}`, "success");
   if (removed.length) showToast(`USB removed: ${removed.join(', ')}`, "danger");
   renderDriveButtons(drives);
 });
 
-// --------------------
-// File tabs and display
-// --------------------
+
+
+
 function populateTabs(drive) {
   driveContainer.innerHTML = '';
 
@@ -135,9 +135,9 @@ function showFiles(files, type, dirPath) {
   }
 }
 
-// --------------------
-// File viewer logic
-// --------------------
+
+
+
 async function openFile(filePath, ext) {
   viewer.innerHTML = '';
   viewer.className = '';
@@ -153,26 +153,46 @@ async function openFile(filePath, ext) {
   if (['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'].includes(ext)) {
     viewer.classList.add('media-mode');
     viewer.innerHTML = `
-      <div style="width:90%;height:90%;position:relative;">
-        <img id="zoomableImg" src="file://${filePath}" style="width:100%;height:100%;object-fit:contain;transform-origin:center;">
-      </div>`;
+    <div style="width:90%;height:90%;position:relative;display:flex;align-items:center;justify-content:center;">
+      <button id="resetZoomBtn" 
+        class="btn btn-outline-light btn-sm" 
+        style="position:absolute;top:10px;right:10px;z-index:10;opacity:0.8;">
+        Reset View
+      </button>
+      <img id="zoomableImg" 
+        src="file://${filePath}" 
+        style="width:100%;height:100%;object-fit:contain;transform-origin:center;">
+    </div>`;
 
     const zoomableImage = document.getElementById('zoomableImg');
-    if (zoomableImage) {
-      zoomableImage.addEventListener('load', () => {
-        const zoomed = Panzoom(zoomableImage, {
-          maxScale: 10,
-          minScale: 1,
-          contain: 'outside',
-        });
+    const resetBtn = document.getElementById('resetZoomBtn');
 
-        // Enable mouse wheel zoom
-        zoomableImage.parentElement.addEventListener('wheel', zoomed.zoomWithWheel);
-
+    zoomableImage.addEventListener('load', () => {
+      const zoomed = Panzoom(zoomableImage, {
+        maxScale: 10,
+        minScale: 1,
+        contain: 'outside'
       });
-    }
+      
+      zoomableImage.parentElement.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        zoomed.zoomWithWheel(e);
+      }, { passive: false });
+
+      
+      resetBtn.addEventListener('click', () => {
+        zoomed.reset();
+      });
+
+      
+      resetBtn.style.transition = 'opacity 0.15s';
+      resetBtn.addEventListener('mouseenter', () => (resetBtn.style.opacity = '1'));
+      resetBtn.addEventListener('mouseleave', () => (resetBtn.style.opacity = '0.8'));
+    });
+
     return;
   }
+
 
   // PDFs
   if (ext === 'pdf') {
@@ -202,9 +222,9 @@ async function openFile(filePath, ext) {
   viewer.innerHTML = `<p style="color:white;">Unsupported file type.</p>`;
 }
 
-// --------------------
-// Auto-load on startup
-// --------------------
+
+
+
 window.addEventListener('DOMContentLoaded', async () => {
   await refreshDriveList();
 });

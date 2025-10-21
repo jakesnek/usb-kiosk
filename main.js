@@ -73,9 +73,9 @@ ipcMain.handle('list-usb-drives', listUsbDrives);
 
 ipcMain.handle('read-directory', async (_, folderPath) => {
   const allowedExtensions = [
-    '.mp4', '.webm', '.ogg', '.mkv', '.avi', // videos
-    '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', // images
-    '.pdf', '.docx', '.txt' // documents
+    '.mp4', '.webm', '.ogg', '.mkv', '.avi', 
+    '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', 
+    '.pdf', '.docx', '.txt' 
   ];
 
   function getAllFiles(dirPath, arrayOfFiles = []) {
