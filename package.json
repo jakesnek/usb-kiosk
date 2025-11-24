@@ -10,14 +10,21 @@
     "electron": "^38.2.2",
     "electron-builder": "^24.0.0"
   },
-  "build": {
-    "appId": "com.4jd.usbkiosk",
-    "productName": "USB Kiosk",
-    "win": {
-      "target": "nsis",
-      "requestedExecutionLevel": "requireAdministrator"
-    }
+"build": {
+  "appId": "com.4jd.usbkiosk",
+  "productName": "USB Kiosk",
+  "win": {
+    "target": "nsis",
+    "requestedExecutionLevel": "asInvoker"
   },
+  "nsis": {
+    "oneClick": false,  
+    "perMachine": true,
+    "allowToChangeInstallationDirectory": true,
+    "allowElevation": true
+  }
+},
+
   "dependencies": {
     "@panzoom/panzoom": "^4.6.0",
     "bootstrap-icons": "^1.13.1",
