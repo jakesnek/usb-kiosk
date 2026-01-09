@@ -1,6 +1,6 @@
 {
   "name": "usb-kiosk",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -10,27 +10,27 @@
     "electron": "^38.2.2",
     "electron-builder": "^24.0.0"
   },
-"build": {
-  "appId": "com.4jd.usbkiosk",
-  "productName": "USB Kiosk",
-  "win": {
-    "target": "nsis",
-    "requestedExecutionLevel": "asInvoker"
+  "build": {
+    "appId": "com.4jd.usbkiosk",
+    "productName": "USB Kiosk",
+    "win": {
+      "target": "nsis",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true,
+      "allowElevation": true
+    }
   },
-  "nsis": {
-    "oneClick": false,  
-    "perMachine": true,
-    "allowToChangeInstallationDirectory": true,
-    "allowElevation": true
-  }
-},
-
   "dependencies": {
     "@panzoom/panzoom": "^4.6.0",
     "bootstrap-icons": "^1.13.1",
     "drivelist": "^12.0.2",
     "mammoth": "^1.11.0",
     "node-gyp": "^11.4.2",
+    "pdfjs-dist": "^5.4.449",
     "python": "^0.0.4"
   }
 }
