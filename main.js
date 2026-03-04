@@ -3,6 +3,8 @@ const fs = require('fs');
 const path = require('path');
 const mammoth = require('mammoth');
 const drivelist = require('drivelist');
+const XLSX = require('xlsx');
+const heicConvert = require('heic-convert');
 
 let mainWindow = null;
 let previousDrives = [];
@@ -74,8 +76,8 @@ ipcMain.handle('list-usb-drives', listUsbDrives);
 ipcMain.handle('read-directory', async (_, folderPath) => {
   const allowedExtensions = [
     '.mp4', '.webm', '.ogg', '.mkv', '.avi', 
-    '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', 
-    '.pdf', '.docx', '.txt' 
+    '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.heic',
+    '.pdf', '.docx', '.txt', '.xlsx'
   ];
 
   function getAllFiles(dirPath, arrayOfFiles = []) {
@@ -115,7 +117,25 @@ ipcMain.handle('read-directory', async (_, folderPath) => {
 ipcMain.handle('convert-docx', async (_, filePath) => {
   try {
     const buffer = fs.readFileSync(filePath);
-    const result = await mammoth.convertToHtml({ buffer });
+    const result = await mammoth.convertToHtml(
+      { buffer },
+      {
+        includeDefaultStyleMap: true,
+        styleMap: [
+          "u => u",
+          "strike => s",
+          "comment-reference => sup",
+          "b => strong",
+          "i => em"
+        ],
+        includeEmbeddedStyleMap: true,
+        convertImage: mammoth.images.imgElement(image =>
+          image.read("base64").then(data => ({
+            src: `data:${image.contentType};base64,${data}`
+          }))
+        )
+      }
+    );
     return { success: true, html: result.value };
   } catch (err) {
     return { success: false, error: err.message };
@@ -126,6 +146,31 @@ ipcMain.handle('read-text', async (_, filePath) => {
   try {
     const content = fs.readFileSync(filePath, "utf8");
     return { success: true, text: content };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('convert-xlsx', async (_, filePath) => {
+  try {
+    const workbook = XLSX.readFile(filePath);
+    const html = workbook.SheetNames.map(name => {
+      const sheet = workbook.Sheets[name];
+      const table = XLSX.utils.sheet_to_html(sheet);
+      return `<h3>${name}</h3>${table}`;
+    }).join('');
+    return { success: true, html };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('convert-heic', async (_, filePath) => {
+  try {
+    const buffer = fs.readFileSync(filePath);
+    const output = await heicConvert({ buffer, format: 'JPEG', quality: 0.9 });
+    const base64 = Buffer.from(output).toString('base64');
+    return { success: true, data: `data:image/jpeg;base64,${base64}` };
   } catch (err) {
     return { success: false, error: err.message };
   }

@@ -1,6 +1,6 @@
 {
   "name": "usb-kiosk",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -28,9 +28,11 @@
     "@panzoom/panzoom": "^4.6.0",
     "bootstrap-icons": "^1.13.1",
     "drivelist": "^12.0.2",
+    "heic-convert": "^2.1.0",
     "mammoth": "^1.11.0",
     "node-gyp": "^11.4.2",
     "pdfjs-dist": "^5.4.449",
-    "python": "^0.0.4"
+    "python": "^0.0.4",
+    "xlsx": "^0.18.5"
   }
 }

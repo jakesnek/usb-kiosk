@@ -34,67 +34,99 @@ body {
   user-select: text;
 }
 
-.btn-outline-custom {
-  border-color: var(--ny-gold) !important;
-  color: var(--ny-gold) !important;
-  border-radius: 50% !important;
-  /* Larger touch target - minimum 48x48px for accessibility */
-  width: 60px !important;
-  height: 60px !important;
-  transition: all 0.2s ease;
-  /* Touch feedback */
-  -webkit-tap-highlight-color: rgba(212, 175, 55, 0.3);
-}
-
-.btn-outline-custom:active {
-  background-color: var(--ny-gold) !important;
-  color: var(--ny-dark-blue) !important;
-  transform: scale(0.95);
-  box-shadow: 0 2px 8px rgba(212, 175, 55, 0.4);
-}
-
-.navbar {
-  width: calc(100vw - 20px);
-}
-
-.custom-navbar {
-  margin-top: 20px;
+#infoBar {
+  display: flex;
+  align-items: center;
   background: linear-gradient(90deg, var(--ny-dark-blue) 0%, var(--ny-medium-blue) 100%);
-  border-radius: 60px;
-  box-shadow: 0 4px 20px rgba(0, 59, 92, 0.5), 0 0 40px rgba(212, 175, 55, 0.2);
+  border-radius: 12px;
   border: 2px solid var(--ny-gold);
-  animation: goldShimmer 3s ease-in-out infinite;
-  /* Larger padding for easier touch */
-  padding: 12px 24px !important;
+  padding: 10px 20px;
+  flex-shrink: 0;
+  min-height: 44px;
+  box-shadow: 0 2px 12px rgba(0, 59, 92, 0.4);
+}
+
+#currentFileName {
+  color: var(--ny-light-gold);
+  font-size: 16px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.7;
+}
+
+#infoBar.has-file #currentFileName {
+  opacity: 1;
+  color: var(--ny-gold);
+}
+
+#sidebarToggle {
+  position: fixed;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1040;
+  width: 30px;
+  height: 72px;
+  background: rgba(0, 59, 92, 0.4);
+  border: 2px solid rgba(212, 175, 55, 0.4);
+  border-left: none;
+  border-radius: 0 36px 36px 0;
+  color: rgba(212, 175, 55, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  backdrop-filter: blur(8px);
+  transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+  -webkit-tap-highlight-color: transparent;
+  cursor: grab;
+  touch-action: none;
+  outline: none;
+  font-size: 22px;
+}
+
+#sidebarToggle:active {
+  cursor: grabbing;
+}
+
+#sidebarToggle.active-flash {
+  background: rgba(0, 59, 92, 0.9);
+  border-color: var(--ny-gold);
+  color: var(--ny-gold);
 }
 
 #main {
-  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   height: 100vh;
   width: 100%;
+  padding: 20px 20px 20px 40px;
+  gap: 20px;
   background: linear-gradient(135deg, var(--ny-medium-gray) 0%, var(--ny-dark-gray) 100%);
 }
 
 #viewer {
-  display: grid;
-  place-items: center;
-  height: 100%;
-  margin: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 0;
   border-radius: 20px;
   background: linear-gradient(135deg, #1a1a1a 0%, #000000 100%);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8), 
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8),
               inset 0 0 0 2px var(--ny-gold);
   overflow: hidden;
   position: relative;
-  /* Better touch handling */
+  padding: 10px;
+  box-sizing: border-box;
   touch-action: pan-x pan-y;
 }
 
-/* Simplified fade-in - faster for touch responsiveness */
-#viewer > * {
+/* Simplified fade-in - skip on loading spinners */
+#viewer > *:not(.text-center) {
   animation: fadeInContent 0.25s ease-out;
 }
 
@@ -120,16 +152,12 @@ body {
 
 #driveContainer {
   width: 100%;
-  float: left;
-  padding: 15px;
+  padding: 10px 0 0;
   height: 100%;
   overflow-y: auto;
-  background: linear-gradient(180deg, var(--ny-dark-blue) 0%, var(--ny-medium-blue) 50%, #1a3a52 100%);
-  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.5);
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
   scrollbar-gutter: stable overlay;
-  border-left: 3px solid var(--ny-gold);
 }
 
 #driveContainer .btn-dark {
@@ -178,38 +206,26 @@ body {
     background: linear-gradient(135deg, rgba(0, 59, 92, 0.9) 0%, rgba(0, 102, 161, 0.9) 100%) !important;
   }
   
-  .btn-outline-custom:hover {
-    transform: none;
-    background-color: transparent !important;
-    color: var(--ny-gold) !important;
-  }
-  
   .card:hover {
     transform: none;
   }
 }
 
-/* Fix for double scrollbar - viewer should not scroll */
 #viewer.pdf-mode {
   padding: 0;
   background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
-  transform-origin: center center;
-  transition: transform 0.1s ease-out;
-  flex-grow: 1;
   overflow: hidden;
 }
 
 #viewer.media-mode {
-  transform-origin: center center;
   overflow: hidden;
 }
 
-/* Text mode should handle scrolling internally */
 #viewer.text-mode {
-  display: block !important;
   padding: 0;
   overflow: hidden;
-  text-align: left;
+  align-items: stretch;
+  justify-content: stretch;
   background: linear-gradient(135deg, var(--ny-cream) 0%, #ffffff 100%);
 }
 
@@ -218,16 +234,13 @@ body {
 .txt-viewer {
   color: var(--ny-dark-gray);
   padding: 25px;
-  width: 100%;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   box-sizing: border-box;
   word-wrap: break-word;
-  white-space: pre-wrap;
   line-height: 1.8;
-  /* Larger font for easier reading on touch devices */
   font-size: 18px;
-  /* Better touch scrolling */
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
 }
@@ -239,10 +252,95 @@ body {
   display: block;
 }
 
+.docx-viewer h1,
+.docx-viewer h2,
+.docx-viewer h3,
+.docx-viewer h4 {
+  color: var(--ny-dark-blue);
+  margin: 1em 0 0.5em;
+  line-height: 1.3;
+}
+
+.docx-viewer h1 { font-size: 26px; }
+.docx-viewer h2 { font-size: 22px; }
+.docx-viewer h3 { font-size: 20px; }
+
+.docx-viewer p {
+  margin: 0.5em 0;
+}
+
+.docx-viewer table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0;
+}
+
+.docx-viewer td,
+.docx-viewer th {
+  border: 1px solid #ccc;
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.docx-viewer ul,
+.docx-viewer ol {
+  padding-left: 2em;
+  margin: 0.5em 0;
+}
+
+.docx-viewer li {
+  margin: 0.3em 0;
+}
+
 .txt-viewer {
   font-family: Consolas, "Courier New", monospace;
+  white-space: pre-wrap;
   background: transparent;
   color: var(--ny-dark-gray);
+}
+
+.xlsx-viewer {
+  color: var(--ny-dark-gray);
+  padding: 25px;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  box-sizing: border-box;
+  -webkit-overflow-scrolling: touch;
+  font-size: 16px;
+}
+
+.xlsx-viewer h3 {
+  color: var(--ny-dark-blue);
+  font-size: 18px;
+  font-weight: 600;
+  margin: 20px 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--ny-gold);
+}
+
+.xlsx-viewer h3:first-child {
+  margin-top: 0;
+}
+
+.xlsx-viewer table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.xlsx-viewer td,
+.xlsx-viewer th {
+  border: 1px solid #ddd;
+  padding: 8px 12px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.xlsx-viewer tr:nth-child(even) {
+  background: rgba(0, 59, 92, 0.05);
 }
 
 #fileList {
@@ -462,21 +560,70 @@ iframe {
   box-shadow: 0 2px 8px rgba(212, 175, 55, 0.5);
 }
 
-/* PDF Controls - larger touch targets */
-#pdfControls button {
-  min-width: 120px !important;
-  min-height: 48px !important;
-  font-size: 16px !important;
-  padding: 12px 20px !important;
-  margin: 0 8px !important;
+#pdfContainer {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  -webkit-overflow-scrolling: touch;
+}
+
+#pdfContainer.scrollable {
+  justify-content: flex-start;
+}
+
+#pdfCanvas {
+  display: block;
+  flex-shrink: 0;
+}
+
+#pdfControls {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 100;
+  background: rgba(0, 59, 92, 0.92);
+  border: 2px solid var(--ny-gold);
+  border-radius: 12px;
+  padding: 6px 10px;
+  backdrop-filter: blur(8px);
 }
 
 #pdfControls #pageInfo {
-  font-size: 18px !important;
-  padding: 12px 20px !important;
-  min-height: 48px;
+  color: var(--ny-gold);
+  font-weight: 600;
+  font-size: 15px;
+  padding: 0 6px;
+  min-width: 50px;
+  text-align: center;
+}
+
+.pdf-ctrl-btn {
+  background: transparent;
+  color: var(--ny-gold);
+  border: 1.5px solid var(--ny-gold);
+  border-radius: 8px;
+  width: 44px;
+  height: 44px;
+  font-size: 22px;
+  font-weight: 700;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: rgba(212, 175, 55, 0.3);
+}
+
+.pdf-ctrl-btn:active {
+  background: var(--ny-gold);
+  color: var(--ny-dark-blue);
 }
 
 #driveContainer p,
@@ -501,15 +648,6 @@ iframe {
 
 .fade-out {
   opacity: 0;
-}
-
-@keyframes goldShimmer {
-  0%, 100% {
-    box-shadow: 0 4px 20px rgba(0, 59, 92, 0.5), 0 0 40px rgba(212, 175, 55, 0.2);
-  }
-  50% {
-    box-shadow: 0 4px 20px rgba(0, 59, 92, 0.5), 0 0 50px rgba(212, 175, 55, 0.4);
-  }
 }
 
 /* Additional touch-friendly improvements */
@@ -552,6 +690,122 @@ button:active::after,
 .offcanvas-custom-color {
   background: linear-gradient(180deg, var(--ny-dark-blue) 0%, var(--ny-medium-blue) 50%, #1a3a52 100%) !important;
   color: var(--ny-gold) !important;
+}
+
+.offcanvas-custom-color .offcanvas-body {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding-bottom: 0;
+}
+
+.sidebar-label {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--ny-light-gold);
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+  margin-bottom: 4px;
+  flex-shrink: 0;
+}
+
+.btn-back {
+  background: transparent;
+  color: var(--ny-gold);
+  border: 1px solid var(--ny-gold);
+  border-radius: 8px;
+  padding: 8px 16px;
+  margin-bottom: 10px;
+  font-size: 16px;
+  font-weight: 500;
+  width: 100%;
+  text-align: left;
+  min-height: 48px;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.btn-back:active {
+  background: var(--ny-gold);
+  color: var(--ny-dark-blue);
+}
+
+.image-carousel {
+  width: 90%;
+  height: 90%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.carousel-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  background: rgba(0, 59, 92, 0.85);
+  color: var(--ny-gold);
+  border: 2px solid var(--ny-gold);
+  border-radius: 50%;
+  width: 52px;
+  height: 52px;
+  font-size: 28px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(8px);
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: rgba(212, 175, 55, 0.3);
+}
+
+.carousel-btn:active {
+  background: var(--ny-gold);
+  color: var(--ny-dark-blue);
+}
+
+.carousel-prev { left: 10px; }
+.carousel-next { right: 10px; }
+
+.carousel-counter {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 59, 92, 0.85);
+  color: var(--ny-gold);
+  border: 1.5px solid var(--ny-gold);
+  border-radius: 20px;
+  padding: 4px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  backdrop-filter: blur(8px);
+  z-index: 10;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: var(--ny-gold);
+  opacity: 0.6;
+}
+
+.empty-state svg {
+  opacity: 0.5;
+}
+
+.empty-state p {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.empty-state span {
+  font-size: 16px;
+  opacity: 0.7;
 }
 
 @keyframes ripple {
