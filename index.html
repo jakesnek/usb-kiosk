@@ -27,6 +27,11 @@
         <span>Open the sidebar to browse USB drives</span>
       </div>
     </div>
+    <div id="tabDots">
+      <button class="tab-dot active" data-tab="Videos" title="Videos"><i class="bi bi-film"></i></button>
+      <button class="tab-dot" data-tab="Images" title="Images"><i class="bi bi-image"></i></button>
+      <button class="tab-dot" data-tab="Documents" title="Documents"><i class="bi bi-file-earmark-text"></i></button>
+    </div>
     <div class="offcanvas offcanvas-start offcanvas-custom-color" tabindex="-1" id="offcanvasBar"
       aria-labelledby="offcanvasExampleLabel">
       <div class="offcanvas-header">
@@ -39,9 +44,17 @@
       </div>
     </div>
 
-    <button id="sidebarToggle" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBar">
-      <i class="bi bi-list"></i>
-    </button>
+    <div id="iconStrip">
+      <button class="icon-strip-btn" data-tab="Videos" title="Videos">
+        <i class="bi bi-film"></i>
+      </button>
+      <button class="icon-strip-btn" data-tab="Images" title="Images">
+        <i class="bi bi-image"></i>
+      </button>
+      <button class="icon-strip-btn" data-tab="Documents" title="Documents">
+        <i class="bi bi-file-earmark-text"></i>
+      </button>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"

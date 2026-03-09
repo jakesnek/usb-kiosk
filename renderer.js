@@ -1,5 +1,6 @@
 
 let currentDrive = null;
+let currentTab = 'Videos';
 let imageList = [];
 let imageIndex = 0;
 const driveContainer = document.getElementById('driveContainer');
@@ -120,11 +121,72 @@ window.api.onUsbUpdate(async ({ drives, added, removed }) => {
     showToast(`USB removed: ${removed.join(', ')}`, "danger");
     if (currentDrive && removed.some(r => currentDrive.path.startsWith(r))) {
       currentDrive = null;
+      document.getElementById('tabDots').classList.remove('visible');
       resetViewer();
     }
   }
   renderDriveButtons(drives);
 });
+
+const TAB_ORDER = ['Videos', 'Images', 'Documents'];
+const TAB_ICONS = { 'Videos': 'bi-film', 'Images': 'bi-image', 'Documents': 'bi-file-earmark-text' };
+const TAB_EXTS = {
+  'Videos': ['mp4', 'webm', 'ogg', 'mkv', 'avi'],
+  'Images': ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'heic'],
+  'Documents': ['pdf', 'docx', 'txt', 'xlsx']
+};
+
+function switchToTab(tabName, autoOpenFirst = false) {
+  currentTab = tabName;
+  // Update icon strip highlight
+  const stripBtns = document.querySelectorAll('.icon-strip-btn');
+  stripBtns.forEach(b => b.classList.toggle('active-tab', b.dataset.tab === tabName));
+
+  // Update tab dots
+  document.querySelectorAll('.tab-dot').forEach(d => d.classList.toggle('active', d.dataset.tab === tabName));
+
+  // Show visual indicator
+  showTabIndicator(tabName);
+
+  if (!currentDrive) return;
+
+  // Update sidebar tab highlight
+  const tabLinks = document.querySelectorAll('#driveContainer .nav-link');
+  tabLinks.forEach(link => {
+    link.classList.toggle('active', link.textContent.startsWith(tabName));
+  });
+
+  // Update sidebar file list
+  showFiles(currentDrive.files, tabName, currentDrive.path);
+
+  // Auto-open first file from the new tab
+  if (autoOpenFirst) {
+    const exts = TAB_EXTS[tabName] || [];
+    const firstFile = currentDrive.files.find(f => {
+      const ext = (f.split('.').pop() || '').toLowerCase();
+      return exts.includes(ext);
+    });
+    if (firstFile) {
+      const ext = (firstFile.split('.').pop() || '').toLowerCase();
+      setTimeout(() => openFile(firstFile, ext), 200);
+    }
+  }
+}
+
+function showTabIndicator(tabName) {
+  // Remove existing indicator
+  const existing = document.getElementById('tabIndicator');
+  if (existing) existing.remove();
+
+  const indicator = document.createElement('div');
+  indicator.id = 'tabIndicator';
+  indicator.innerHTML = `<i class="bi ${TAB_ICONS[tabName]}"></i> ${tabName}`;
+  document.body.appendChild(indicator);
+
+  // Fade out and remove
+  setTimeout(() => indicator.classList.add('fade-out'), 600);
+  setTimeout(() => indicator.remove(), 1000);
+}
 
 function getFileCount(files, type) {
   const extMap = {
@@ -138,6 +200,8 @@ function getFileCount(files, type) {
 
 function populateTabs(drive) {
   driveContainer.innerHTML = '';
+  // Show tab dots
+  document.getElementById('tabDots').classList.add('visible');
 
   // Back button to return to drive list
   const backBtn = document.createElement('button');
@@ -145,6 +209,7 @@ function populateTabs(drive) {
   backBtn.innerHTML = '&larr; Back to drives';
   backBtn.addEventListener('click', debounce(async () => {
     currentDrive = null;
+    document.getElementById('tabDots').classList.remove('visible');
     await refreshDriveList();
   }, 300));
   driveContainer.appendChild(backBtn);
@@ -166,6 +231,7 @@ function populateTabs(drive) {
     const handleTab = debounce(() => {
       Array.from(li.parentElement.children).forEach(c => c.firstChild.classList.remove('active'));
       a.classList.add('active');
+      currentTab = type;
       showFiles(drive.files, type, drive.path);
     }, 300);
 
@@ -184,7 +250,15 @@ function populateTabs(drive) {
   fileListDiv.id = 'fileList';
   driveContainer.appendChild(fileListDiv);
 
-  showFiles(drive.files, 'Videos', drive.path);
+  // If a tab was requested from the icon strip before drive selection, switch to it
+  if (window._pendingTabSwitch) {
+    const pending = window._pendingTabSwitch;
+    window._pendingTabSwitch = null;
+    showFiles(drive.files, pending, drive.path);
+    switchToTab(pending);
+  } else {
+    showFiles(drive.files, 'Videos', drive.path);
+  }
 }
 
 function showFiles(files, type, dirPath) {
@@ -314,14 +388,31 @@ async function showImage(filePath, ext) {
   if (nextBtn) nextBtn.addEventListener('click', () => navigateImage(1));
 }
 
+function updateTabHighlight(ext) {
+  for (const [tab, exts] of Object.entries(TAB_EXTS)) {
+    if (exts.includes(ext)) {
+      currentTab = tab;
+      document.querySelectorAll('.icon-strip-btn').forEach(b => b.classList.toggle('active-tab', b.dataset.tab === tab));
+      document.querySelectorAll('.tab-dot').forEach(d => d.classList.toggle('active', d.dataset.tab === tab));
+      break;
+    }
+  }
+}
+
 async function openFile(filePath, ext, button) {
   const fileName = filePath.split(/[\\/]/).pop();
   setFileName(fileName);
+  updateTabHighlight(ext);
 
-  // Add loading state to button
-  const originalText = button.textContent;
-  button.disabled = true;
-  button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Loading...';
+  // Add loading state to button (if called from sidebar)
+  const originalText = button ? button.textContent : '';
+  if (button) {
+    button.disabled = true;
+    button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Loading...';
+  }
+  const restoreButton = () => {
+    if (button) { button.textContent = originalText; button.disabled = false; }
+  };
 
   // Images skip the fade — showImage handles its own loading state
   if (IMAGE_EXTS.includes(ext)) {
@@ -330,8 +421,7 @@ async function openFile(filePath, ext, button) {
       imageIndex = imageList.indexOf(filePath);
     }
     await showImage(filePath, ext);
-    button.textContent = originalText;
-    button.disabled = false;
+    restoreButton();
     return;
   }
 
@@ -348,14 +438,12 @@ async function openFile(filePath, ext, button) {
       if (!SUPPORTED_VIDEO.includes(ext)) {
         viewer.innerHTML = `<p style="color:var(--ny-gold);">This video format (.${ext}) is not supported for playback.</p>`;
         viewer.style.opacity = '1';
-        button.textContent = originalText;
-        button.disabled = false;
+        restoreButton();
         return;
       }
       viewer.innerHTML = `<video controls disablePictureInPicture controlsList="noplaybackrate" style="width:100%;height:100%;object-fit:contain;"><source src="file://${filePath}" type="video/${ext}"></video>`;
       viewer.style.opacity = '1';
-      button.textContent = originalText;
-      button.disabled = false;
+      restoreButton();
       return;
     }
 
@@ -451,8 +539,7 @@ async function openFile(filePath, ext, button) {
         viewer.innerHTML = `<p style="color:#8B0000;">Failed to load PDF: ${err.message}</p>`;
       });
       
-      button.textContent = originalText;
-      button.disabled = false;
+      restoreButton();
       return;
     }
 
@@ -480,8 +567,7 @@ async function openFile(filePath, ext, button) {
         viewer.style.opacity = '1';
       }, 100);
 
-      button.textContent = originalText;
-      button.disabled = false;
+      restoreButton();
       return;
     }
 
@@ -509,8 +595,7 @@ async function openFile(filePath, ext, button) {
         viewer.style.opacity = '1';
       }, 100);
 
-      button.textContent = originalText;
-      button.disabled = false;
+      restoreButton();
       return;
     }
 
@@ -539,16 +624,14 @@ async function openFile(filePath, ext, button) {
         viewer.style.opacity = '1';
       }, 100);
       
-      button.textContent = originalText;
-      button.disabled = false;
+      restoreButton();
       return;
     }
 
     // Unsupported
     viewer.innerHTML = `<p style="color:white;">Unsupported file type.</p>`;
     viewer.style.opacity = '1';
-    button.textContent = originalText;
-    button.disabled = false;
+    restoreButton();
   }, 150);
 }
 
@@ -571,57 +654,83 @@ window.addEventListener('DOMContentLoaded', async () => {
   fileList.id = 'fileList';
   fileList.style.transition = 'opacity 0.15s ease-out';
 
-  // Draggable sidebar toggle button
-  const toggle = document.getElementById('sidebarToggle');
+  // Position tab dots centered on the viewer
+  const tabDots = document.getElementById('tabDots');
+  function positionDots() {
+    const rect = viewer.getBoundingClientRect();
+    tabDots.style.bottom = (window.innerHeight - rect.bottom + 10) + 'px';
+    tabDots.style.left = (rect.left + rect.width / 2) + 'px';
+    tabDots.style.transform = 'translateX(-50%)';
+  }
+  positionDots();
+  window.addEventListener('resize', positionDots);
+
+  // Icon strip sidebar controller
+  const iconStrip = document.getElementById('iconStrip');
+  const stripBtns = iconStrip.querySelectorAll('.icon-strip-btn');
   let dragging = false;
   let pointerDown = false;
   let dragStartY = 0;
-  let btnStartTop = 0;
+  let stripStartTop = 0;
+  let pendingTab = null;
 
-  // Remove Bootstrap's data-bs-toggle so we control it manually
-  toggle.removeAttribute('data-bs-toggle');
-  toggle.removeAttribute('data-bs-target');
-
-  toggle.addEventListener('pointerdown', (e) => {
+  // Track which tab icon was pressed for tap detection
+  iconStrip.addEventListener('pointerdown', (e) => {
     pointerDown = true;
     dragging = false;
     dragStartY = e.clientY;
-    const rect = toggle.getBoundingClientRect();
-    btnStartTop = rect.top + rect.height / 2;
-    toggle.setPointerCapture(e.pointerId);
+    const rect = iconStrip.getBoundingClientRect();
+    stripStartTop = rect.top + rect.height / 2;
+    iconStrip.setPointerCapture(e.pointerId);
+    pendingTab = e.target.closest('.icon-strip-btn')?.dataset.tab || null;
   });
 
-  toggle.addEventListener('pointermove', (e) => {
+  iconStrip.addEventListener('pointermove', (e) => {
     if (!pointerDown) return;
     if (Math.abs(e.clientY - dragStartY) > 8) {
       dragging = true;
-      toggle.classList.add('active-flash');
-      const newY = Math.max(40, Math.min(window.innerHeight - 40, btnStartTop + (e.clientY - dragStartY)));
-      toggle.style.top = newY + 'px';
+      pendingTab = null;
+      iconStrip.classList.add('active-flash');
+      const newY = Math.max(80, Math.min(window.innerHeight - 80, stripStartTop + (e.clientY - dragStartY)));
+      iconStrip.style.top = newY + 'px';
     }
   });
 
-  toggle.addEventListener('pointerup', () => {
+  iconStrip.addEventListener('pointerup', () => {
     pointerDown = false;
     if (dragging) {
       dragging = false;
-      // Stay opaque briefly after drag ends
-      setTimeout(() => toggle.classList.remove('active-flash'), 1000);
+      setTimeout(() => iconStrip.classList.remove('active-flash'), 1000);
       return;
     }
-    // Tap — open sidebar manually
+    // Tap — open sidebar, switch to the tapped tab
     const offcanvas = bootstrap.Offcanvas.getOrCreateInstance(document.getElementById('offcanvasBar'));
-    offcanvas.toggle();
+    offcanvas.show();
+
+    if (pendingTab) {
+      // Highlight the tapped icon
+      stripBtns.forEach(b => b.classList.remove('active-tab'));
+      const activeBtn = iconStrip.querySelector(`[data-tab="${pendingTab}"]`);
+      if (activeBtn) activeBtn.classList.add('active-tab');
+
+      if (currentDrive) {
+        // Drive already selected — switch to that tab and open first file
+        switchToTab(pendingTab, true);
+      } else {
+        // No drive selected — store desired tab for after drive selection
+        window._pendingTabSwitch = pendingTab;
+      }
+    }
+    pendingTab = null;
   });
 
   // Flash opaque when sidebar opens (works for both tap and swipe)
   const offcanvasBarEl = document.getElementById('offcanvasBar');
   offcanvasBarEl.addEventListener('show.bs.offcanvas', () => {
-    toggle.classList.add('active-flash');
+    iconStrip.classList.add('active-flash');
   });
   offcanvasBarEl.addEventListener('hidden.bs.offcanvas', () => {
-    // Stay opaque briefly after sidebar closes
-    setTimeout(() => toggle.classList.remove('active-flash'), 1000);
+    setTimeout(() => iconStrip.classList.remove('active-flash'), 1000);
   });
 
   // Swipe from left edge to open sidebar
@@ -652,6 +761,60 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   document.addEventListener('touchend', () => { swiping = false; }, { passive: true });
 
+  // Swipe left/right to switch file type tabs
+  let tabSwipeStartX = 0;
+  let tabSwipeStartY = 0;
+  let tabSwiping = false;
+  let tabSwipeTarget = null;
+
+  function tabSwipeStart(x, y, target) {
+    if (!currentDrive) return;
+    const inCarousel = target.closest('.image-carousel');
+    const inOffcanvas = target.closest('.offcanvas');
+    const inIconStrip = target.closest('#iconStrip');
+    if (inCarousel || inOffcanvas || inIconStrip) return;
+    tabSwipeStartX = x;
+    tabSwipeStartY = y;
+    tabSwiping = true;
+  }
+
+  function tabSwipeMove(x, y) {
+    if (!tabSwiping) return;
+    const dx = x - tabSwipeStartX;
+    const dy = Math.abs(y - tabSwipeStartY);
+    if (Math.abs(dx) > 80 && dy < 60) {
+      tabSwiping = false;
+      const idx = TAB_ORDER.indexOf(currentTab);
+      let newIdx;
+      if (dx < 0) {
+        newIdx = Math.min(idx + 1, TAB_ORDER.length - 1);
+      } else {
+        newIdx = Math.max(idx - 1, 0);
+      }
+      if (newIdx !== idx) {
+        switchToTab(TAB_ORDER[newIdx], true);
+      }
+    }
+  }
+
+  // Touch events
+  document.addEventListener('touchstart', (e) => {
+    tabSwipeStart(e.touches[0].clientX, e.touches[0].clientY, e.target);
+  }, { passive: true });
+  document.addEventListener('touchmove', (e) => {
+    tabSwipeMove(e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: true });
+  document.addEventListener('touchend', () => { tabSwiping = false; }, { passive: true });
+
+  // Mouse events (click-and-drag to swipe)
+  document.addEventListener('mousedown', (e) => {
+    tabSwipeStart(e.clientX, e.clientY, e.target);
+  });
+  document.addEventListener('mousemove', (e) => {
+    tabSwipeMove(e.clientX, e.clientY);
+  });
+  document.addEventListener('mouseup', () => { tabSwiping = false; });
+
   // Auto-close sidebar after file selection
   const offcanvasEl = document.getElementById('offcanvasBar');
   offcanvasEl.addEventListener('click', (e) => {
@@ -662,6 +825,16 @@ window.addEventListener('DOMContentLoaded', async () => {
         if (offcanvas) offcanvas.hide();
       }, 200);
     }
+  });
+
+  // Tab dots — click to switch tabs
+  document.querySelectorAll('.tab-dot').forEach(dot => {
+    dot.addEventListener('click', debounce(() => {
+      const tab = dot.dataset.tab;
+      if (tab && tab !== currentTab) {
+        switchToTab(tab, true);
+      }
+    }, 300));
   });
 
   await refreshDriveList();
