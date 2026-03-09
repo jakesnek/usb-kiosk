@@ -1,6 +1,6 @@
 # USB Kiosk
 
-A fullscreen Electron kiosk application for the **New York State Unified Court System**. Designed for touchscreen displays, it allows visitors to plug in a USB drive and browse files — no keyboard or mouse required.
+A fullscreen Electron kiosk application designed for touchscreen displays. Allows visitors to plug in a USB drive and browse files — no keyboard or mouse required.
 
 ## Supported File Types
 
