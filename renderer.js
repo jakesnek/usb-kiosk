@@ -70,11 +70,22 @@ function renderDriveButtons(drives) {
     return;
   }
 
+  // Auto-select if only one drive is plugged in
+  if (drives.length === 1 && !currentDrive) {
+    const drivePath = drives[0];
+    driveContainer.innerHTML = '<div class="text-center py-3"><span class="spinner-border spinner-border-sm me-2"></span>Loading drive...</div>';
+    window.api.readDirectory(drivePath).then(files => {
+      currentDrive = { path: drivePath, files };
+      populateTabs(currentDrive);
+    });
+    return;
+  }
+
   drives.forEach((drivePath) => {
     const btn = document.createElement("button");
     btn.className = "btn btn-dark m-1 w-100";
     btn.textContent = drivePath;
-    
+
     btn.addEventListener("click", debounce(async () => {
       if (btn.disabled) return;
       btn.disabled = true;
