@@ -247,7 +247,7 @@ async function showImage(filePath, ext) {
       ${imageList.length > 1 ? `<button class="carousel-btn carousel-prev" id="imgPrev">&lsaquo;</button>` : ''}
       <button id="resetZoomBtn"
         class="btn btn-outline-light btn-sm"
-        style="position:absolute;top:15px;right:15px;z-index:10;opacity:0.9;">
+        style="position:absolute;bottom:20px;left:50%;transform:translateX(-50%);z-index:10;opacity:0;pointer-events:none;transition:opacity 0.2s ease;">
         Reset View
       </button>
       <img id="zoomableImg" src="${imgSrc}"
@@ -276,8 +276,17 @@ async function showImage(filePath, ext) {
       zoomed.zoomWithWheel(e);
     }, { passive: false });
 
+    zoomableImage.addEventListener('panzoomzoom', () => {
+      const scale = zoomed.getScale();
+      const zoomed_in = scale > 1.05;
+      resetBtn.style.opacity = zoomed_in ? '0.9' : '0';
+      resetBtn.style.pointerEvents = zoomed_in ? 'auto' : 'none';
+    });
+
     resetBtn.addEventListener('click', debounce(() => {
       zoomed.reset({ animate: true });
+      resetBtn.style.opacity = '0';
+      resetBtn.style.pointerEvents = 'none';
     }, 300));
   });
 
