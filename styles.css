@@ -553,6 +553,10 @@ iframe {
   padding: 12px 20px !important;
 }
 
+#resetZoomBtn:hover {
+  opacity: 0.95 !important;
+}
+
 #resetZoomBtn:active {
   background: linear-gradient(135deg, var(--ny-gold) 0%, var(--ny-light-gold) 100%) !important;
   color: var(--ny-dark-blue) !important;
